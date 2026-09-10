@@ -60,3 +60,23 @@ With 99.8%+ of transactions being legitimate, a model that predicts
 This project reports precision, recall, F1 and AUC-PR (precision-recall
 AUC), which are far more meaningful under severe class imbalance than
 plain accuracy or even ROC-AUC.
+
+## Results
+
+| Model               | ROC-AUC | AUC-PR |
+|---------------------|---------|--------|
+| Logistic Regression | 0.924   | 0.164  |
+| Random Forest        | 0.999   | 0.744  |
+
+Random Forest ranks transactions far better (AUC-PR 0.74 vs 0.16), but
+at the default 0.5 probability threshold it predicts "not fraud" for
+every case, so its raw recall looks worse than Logistic Regression's.
+Logistic Regression, on the other hand, catches most fraud (76% recall)
+but at the cost of huge numbers of false positives.
+
+This is a genuine, common failure mode in fraud detection: a
+well-ranking model can still perform badly at a naive 0.5 cutoff.
+The natural next step (good discussion point for a presentation) is
+threshold tuning against the precision-recall curve in
+`reports/figures/precision_recall_curve.png`, rather than relying on
+the default classification threshold.
