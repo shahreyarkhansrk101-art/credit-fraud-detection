@@ -48,9 +48,19 @@ def generate_dataset(n_samples: int = N_SAMPLES, fraud_rate: float = FRAUD_RATE,
     # Fraud transactions: shifted mean + higher variance on a subset of
     # components, simulating the kind of anomalies PCA would surface.
     fraud_v = rng.normal(loc=0.0, scale=1.0, size=(n_fraud, N_PCA_FEATURES))
-    shifted_components = rng.choice(N_PCA_FEATURES, size=8, replace=False)
-    fraud_v[:, shifted_components] += rng.normal(loc=3.0, scale=1.5,
+    shifted_components = rng.choice(N_PCA_FEATURES, size=6, replace=False)
+    # Modest, overlapping shift -- real fraud signals are informative but
+    # noisy, not a clean linear split. A big, low-variance shift here would
+    # make the classes trivially separable and produce unrealistic ~100%
+    # scores that don't reflect how these models behave in practice.
+    fraud_v[:, shifted_components] += rng.normal(loc=1.1, scale=1.8,
                                                    size=(n_fraud, len(shifted_components)))
+    # Add a chunk of "hard" fraud cases that look almost identical to
+    # legitimate transactions (no signal injected), so recall can't reach 100%.
+    hard_fraction = 0.35
+    n_hard = int(n_fraud * hard_fraction)
+    hard_idx = rng.choice(n_fraud, size=n_hard, replace=False)
+    fraud_v[hard_idx] = rng.normal(loc=0.0, scale=1.0, size=(n_hard, N_PCA_FEATURES))
 
     # Amount: legit purchases mostly small/medium; fraud skews toward
     # either very small (card testing) or unusually large amounts.
