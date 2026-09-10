@@ -1,15 +1,40 @@
-version: "3.8"
-
 services:
-  fraud-detection:
-    build: .
-    container_name: credit-fraud-detection
+  # One-shot pipeline: generates data, cleans it, trains the model.
+  # api/frontend wait for this to finish before starting.
+  pipeline:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: credit-fraud-pipeline
     volumes:
-      # Mount these so generated data/models/plots land on your host,
-      # not just inside the throwaway container.
       - ./data:/app/data
       - ./models:/app/models
       - ./reports:/app/reports
-    # Default: runs the full pipeline (generate -> clean -> train).
-    # To run a single stage instead:
-    #   docker compose run --rm fraud-detection python src/clean_data.py
+
+  # FastAPI inference service.
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    container_name: credit-fraud-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/app/models:ro
+      - ./data/processed:/app/data/processed:ro
+    depends_on:
+      pipeline:
+        condition: service_completed_successfully
+
+  # Next.js demo UI. Calls the API from the browser at localhost:8000
+  # (the published port above), not via the internal docker network,
+  # since fetch() runs client-side in the user's browser.
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: credit-fraud-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api

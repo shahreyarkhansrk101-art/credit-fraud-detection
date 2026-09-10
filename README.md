@@ -27,8 +27,15 @@ credit-fraud-detection/
 │   └── train_model.py    # model training + evaluation
 ├── models/              # saved trained model(s)
 ├── reports/figures/     # evaluation plots
-├── Dockerfile
-├── docker-compose.yml
+├── api/                 # FastAPI inference service
+│   ├── main.py
+│   ├── requirements.txt
+│   └── Dockerfile
+├── frontend/             # Next.js demo UI
+│   ├── app/page.tsx
+│   └── Dockerfile
+├── Dockerfile            # training pipeline image
+├── docker-compose.yml    # orchestrates pipeline + api + frontend
 └── requirements.txt
 ```
 
@@ -83,9 +90,56 @@ swapping in the real Kaggle dataset and only wanting to re-clean +
 retrain):
 
 ```bash
-docker compose run --rm fraud-detection python src/clean_data.py
-docker compose run --rm fraud-detection python src/train_model.py
+docker compose run --rm pipeline python src/clean_data.py
+docker compose run --rm pipeline python src/train_model.py
 ```
+
+## Full stack: API + demo UI
+
+There's a FastAPI service that serves predictions from the trained
+model, and a small Next.js page to demo it live — pull a real
+transaction from the test set, run it through the model, and see
+whether the prediction matches the true label.
+
+**With Docker (recommended):**
+
+```bash
+docker compose up --build
+```
+
+This builds and runs all three services in order: the pipeline trains
+the model first, then the API and frontend start. Once it settles,
+open:
+
+- **http://localhost:3000** — the demo UI
+- **http://localhost:8000/docs** — interactive API docs (Swagger UI)
+
+**Without Docker (running locally):**
+
+```bash
+# 1. Make sure you've already run the pipeline (see above) so
+#    models/best_model.joblib and data/processed/test.csv exist.
+
+# 2. Start the API
+pip install -r api/requirements.txt
+uvicorn api.main:app --reload --port 8000
+
+# 3. In another terminal, start the frontend
+cd frontend
+npm install
+npm run dev
+```
+
+Then open http://localhost:3000.
+
+### API endpoints
+
+| Method | Path          | Description                                  |
+|--------|---------------|-----------------------------------------------|
+| GET    | `/health`     | Liveness check                                |
+| GET    | `/model-info` | Model type and expected feature names         |
+| GET    | `/sample?label=fraud\|legit` | A real transaction from the test set |
+| POST   | `/predict`    | Score a transaction, returns fraud probability |
 
 
 ## Why not just accuracy?
