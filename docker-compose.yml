@@ -1,0 +1,15 @@
+version: "3.8"
+
+services:
+  fraud-detection:
+    build: .
+    container_name: credit-fraud-detection
+    volumes:
+      # Mount these so generated data/models/plots land on your host,
+      # not just inside the throwaway container.
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./reports:/app/reports
+    # Default: runs the full pipeline (generate -> clean -> train).
+    # To run a single stage instead:
+    #   docker compose run --rm fraud-detection python src/clean_data.py

@@ -27,6 +27,8 @@ credit-fraud-detection/
 │   └── train_model.py    # model training + evaluation
 ├── models/              # saved trained model(s)
 ├── reports/figures/     # evaluation plots
+├── Dockerfile
+├── docker-compose.yml
 └── requirements.txt
 ```
 
@@ -46,12 +48,45 @@ credit-fraud-detection/
 
 ## Usage
 
+### Option A: Local (Python)
+
 ```bash
 pip install -r requirements.txt
 python src/generate_data.py
 python src/clean_data.py
 python src/train_model.py
 ```
+
+### Option B: Docker
+
+Build and run the full pipeline (generate → clean → train) in one shot,
+with results written back to your local `data/`, `models/`, and
+`reports/` folders:
+
+```bash
+docker compose up --build
+```
+
+Or with plain `docker` (no compose):
+
+```bash
+docker build -t fraud-detection .
+docker run --rm \
+  -v $(pwd)/data:/app/data \
+  -v $(pwd)/models:/app/models \
+  -v $(pwd)/reports:/app/reports \
+  fraud-detection
+```
+
+To run just one stage instead of the whole pipeline (e.g. after
+swapping in the real Kaggle dataset and only wanting to re-clean +
+retrain):
+
+```bash
+docker compose run --rm fraud-detection python src/clean_data.py
+docker compose run --rm fraud-detection python src/train_model.py
+```
+
 
 ## Why not just accuracy?
 
