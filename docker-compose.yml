@@ -1,6 +1,4 @@
-services:
-  # One-shot pipeline: generates data, cleans it, trains the model.
-  # api/frontend wait for this to finish before starting.
+services:  # api/frontend wait for this to finish before starting.
   pipeline:
     build:
       context: .
